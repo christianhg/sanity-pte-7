@@ -65,19 +65,12 @@ export function useStudioBlockObjectRender(): (props: BlockObjectRenderProps) =>
         // Unknown type, defer to engine default.
         return props.renderDefault(props)
       }
-      // PTE gives us the full Path including the input's base path appended.
+      // PTE gives us the path INSIDE the input (relative to the input array).
       // Studio's BlockObject expects:
       //   `path`         = absolute path from the document root, AND
-      //   `relativePath` = path relative to the PortableText input array (the
-      //                     bit PTE owns).
-      // The "relative" portion is what comes after `ctx.basePath`.
-      const baseLen = ctx.basePath.length
-      const relativePath: Path =
-        props.path.length > baseLen
-          ? (props.path.slice(baseLen) as Path)
-          : (props.path as Path)
-      const absolutePath: Path =
-        props.path.length > baseLen ? (props.path as Path) : ctx.basePath.concat(props.path)
+      //   `relativePath` = path relative to the PortableText input array.
+      const relativePath: Path = props.path as Path
+      const absolutePath: Path = ctx.basePath.concat(relativePath)
 
       return (
         <div {...(props.attributes as Record<string, unknown>)}>

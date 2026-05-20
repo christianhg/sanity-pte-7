@@ -226,8 +226,6 @@ export function usePortableTextMemberItemsFromProps(
       }
     })
 
-    // eslint-disable-next-line no-console
-    console.log('[walker enumerated]', items.map((i) => ({key: i.key, kind: i.kind})))
     // eslint-disable-next-line react-hooks/refs -- @todo this should be fixed but it's difficult and needs research
     portableTextMemberItemsRef.current = items
 
