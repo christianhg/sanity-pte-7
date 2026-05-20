@@ -17,6 +17,52 @@ interface BuildSelectionFromFragmentProps {
 }
 
 /**
+ * Recursively find a text block by `_key` inside `value`, descending into
+ * every array-valued field on each item (e.g. container fields like
+ * `list.items`, `listItem.content`).
+ */
+function findTextBlockByKey(
+  value: PortableTextBlock[],
+  blockKey: string,
+): PortableTextBlock | undefined {
+  function visit(items: unknown[]): PortableTextBlock | undefined {
+    for (const item of items) {
+      if (!item || typeof item !== 'object') continue
+      const node = item as {_key?: string; [field: string]: unknown}
+      if (typeof node._key !== 'string') continue
+      if (node._key === blockKey && isPortableTextTextBlock(item)) {
+        return item as PortableTextBlock
+      }
+      for (const fieldName of Object.keys(node)) {
+        if (fieldName === '_key' || fieldName === '_type') continue
+        const fieldValue = node[fieldName]
+        if (!Array.isArray(fieldValue)) continue
+        const found = visit(fieldValue)
+        if (found) return found
+      }
+    }
+    return undefined
+  }
+  return visit(value)
+}
+
+/**
+ * Given a `EditorSelection` point path, return the `_key` of the enclosing
+ * text block — i.e. the keyed segment immediately before the `'children'`
+ * string segment. Returns `undefined` if no such segment exists (selection
+ * not inside a text block's children).
+ */
+function getEnclosingTextBlockKey(path: ReadonlyArray<unknown>): string | undefined {
+  for (let i = path.length - 1; i >= 0; i--) {
+    if (path[i] === 'children' && i > 0) {
+      const seg = path[i - 1]
+      if (isKeySegment(seg)) return seg._key
+    }
+  }
+  return undefined
+}
+
+/**
  * @internal
  */
 export function buildTextSelectionFromFragment(
@@ -32,17 +78,15 @@ export function buildTextSelectionFromFragment(
   const textSelection: CommentTextSelection = {
     type: 'text',
     value: fragment.map((fragmentBlock) => {
-      const originalBlock = value.find((b) => b._key === fragmentBlock._key)
+      const originalBlock = findTextBlockByKey(value, fragmentBlock._key)
       if (!isPortableTextTextBlock(originalBlock)) {
         return {
           _key: fragmentBlock._key,
           text: '',
         }
       }
-      const anchorBlockKey =
-        isKeySegment(normalizedSelection.anchor.path[0]) && normalizedSelection.anchor.path[0]._key
-      const focusBlockKey =
-        isKeySegment(normalizedSelection.focus.path[0]) && normalizedSelection.focus.path[0]._key
+      const anchorBlockKey = getEnclosingTextBlockKey(normalizedSelection.anchor.path)
+      const focusBlockKey = getEnclosingTextBlockKey(normalizedSelection.focus.path)
       const fragmentBlockText = toPlainText([fragmentBlock])
       const fragmentStartSpan = isPortableTextTextBlock(fragmentBlock)
         ? fragmentBlock.children[0]
