@@ -80,38 +80,40 @@ export function useStudioBlockObjectRender(): (props: BlockObjectRenderProps) =>
         props.path.length > baseLen ? (props.path as Path) : ctx.basePath.concat(props.path)
 
       return (
-        <BlockObject
-          floatingBoundary={boundaryElement}
-          focused={props.focused}
-          isFullscreen={ctx.isFullscreen}
-          onItemClose={ctx.onItemClose}
-          onItemOpen={ctx.onItemOpen}
-          onItemRemove={ctx.onItemRemove}
-          onPathFocus={ctx.onPathFocus}
-          path={absolutePath}
-          readOnly={props.readOnly || ctx.readOnly}
-          referenceBoundary={ctx.scrollElement}
-          relativePath={relativePath}
-          renderAnnotation={ctx.renderAnnotation}
-          renderBlock={ctx.renderBlock}
-          renderBlockActions={ctx.renderBlockActions}
-          renderCustomMarkers={ctx.renderCustomMarkers}
-          renderField={ctx.renderField}
-          renderInlineBlock={ctx.renderInlineBlock}
-          renderInput={ctx.renderInput}
-          renderItem={ctx.renderItem}
-          renderPreview={ctx.renderPreview}
-          schemaType={sanitySchemaType}
-          selected={props.selected}
-          setElementRef={() => {
-            /* no-op: container-nested block objects don't participate in
-             * Studio's element-ref tracking (used for scroll-into-view of
-             * top-level blocks). Best-effort POC. */
-          }}
-          value={props.node}
-        >
-          {props.children}
-        </BlockObject>
+        <div {...(props.attributes as Record<string, unknown>)}>
+          <BlockObject
+            floatingBoundary={boundaryElement}
+            focused={props.focused}
+            isFullscreen={ctx.isFullscreen}
+            onItemClose={ctx.onItemClose}
+            onItemOpen={ctx.onItemOpen}
+            onItemRemove={ctx.onItemRemove}
+            onPathFocus={ctx.onPathFocus}
+            path={absolutePath}
+            readOnly={props.readOnly || ctx.readOnly}
+            referenceBoundary={ctx.scrollElement}
+            relativePath={relativePath}
+            renderAnnotation={ctx.renderAnnotation}
+            renderBlock={ctx.renderBlock}
+            renderBlockActions={ctx.renderBlockActions}
+            renderCustomMarkers={ctx.renderCustomMarkers}
+            renderField={ctx.renderField}
+            renderInlineBlock={ctx.renderInlineBlock}
+            renderInput={ctx.renderInput}
+            renderItem={ctx.renderItem}
+            renderPreview={ctx.renderPreview}
+            schemaType={sanitySchemaType}
+            selected={props.selected}
+            setElementRef={() => {
+              /* no-op: container-nested block objects don't participate in
+               * Studio's element-ref tracking (used for scroll-into-view of
+               * top-level blocks). Best-effort POC. */
+            }}
+            value={props.node}
+          >
+            {props.children}
+          </BlockObject>
+        </div>
       )
     },
     [boundaryElement, ctx, schemaTypes.blockObjects],

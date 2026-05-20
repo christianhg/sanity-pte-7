@@ -122,6 +122,12 @@ export function BlockObject(props: BlockObjectProps) {
   const schemaTypes = usePortableTextMemberSchemaTypes()
   const [divElement, setDivElement] = useState<HTMLDivElement | null>(null)
   const memberItem = usePortableTextMemberItem(pathToString(path))
+  // eslint-disable-next-line no-console
+  console.debug('[BlockObject lookup]', {
+    pathStr: pathToString(path),
+    found: Boolean(memberItem),
+    memberKey: memberItem?.key,
+  })
   const isDeleting = useRef<boolean>(false)
 
   const selfSelection = useMemo(
