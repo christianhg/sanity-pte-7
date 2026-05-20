@@ -1,0 +1,119 @@
+import {defineBlockObject} from '@portabletext/editor'
+import {type Path} from '@sanity/types'
+import {useBoundaryElement} from '@sanity/ui'
+import {type ReactElement, useCallback, useContext} from 'react'
+import {PortableTextInputCompositorContext} from 'sanity/_singletons'
+
+import {usePortableTextMemberSchemaTypes} from '../contexts/PortableTextMemberSchemaTypes'
+import {BlockObject} from '../object/BlockObject'
+
+/**
+ * The shape of the `render` callback for `defineBlockObject`.
+ * `@portabletext/editor@7` exposes `defineBlockObject` but not its render-props
+ * type by name, so we derive it via `Parameters` inference.
+ */
+type BlockObjectRenderProps = Parameters<
+  NonNullable<Parameters<typeof defineBlockObject>[0]['render']>
+>[0]
+
+/**
+ * Returns a render function that produces a Studio-flavoured block-object
+ * rendering for a PTE v7 `BlockObjectRenderProps`. Pass the returned function
+ * to `defineBlockObject({render: ...})` to opt the registration into Studio's
+ * preview + dialog editing affordances.
+ *
+ * Must be used inside a Sanity PortableText input (Compositor populates the
+ * required context).
+ *
+ * @example
+ * ```tsx
+ * function MyContainerPlugin() {
+ *   const renderStudioBlockObject = useStudioBlockObjectRender()
+ *   return (
+ *     <NodePlugin
+ *       nodes={[
+ *         defineContainer({
+ *           type: 'list-item',
+ *           arrayField: 'content',
+ *           render: ({attributes, children}) => <li {...attributes}>{children}</li>,
+ *           of: [defineBlockObject({type: 'image', render: renderStudioBlockObject})],
+ *         }),
+ *       ]}
+ *     />
+ *   )
+ * }
+ * ```
+ *
+ * @beta
+ */
+export function useStudioBlockObjectRender(): (props: BlockObjectRenderProps) => ReactElement {
+  const ctx = useContext(PortableTextInputCompositorContext)
+  if (!ctx) {
+    throw new Error(
+      'useStudioBlockObjectRender must be used inside a Sanity PortableText input',
+    )
+  }
+  const schemaTypes = usePortableTextMemberSchemaTypes()
+  const boundaryElement = useBoundaryElement().element
+
+  return useCallback(
+    (props: BlockObjectRenderProps): ReactElement => {
+      const sanitySchemaType = schemaTypes.blockObjects.find(
+        (type) => type.name === props.node._type,
+      )
+      if (!sanitySchemaType) {
+        // Unknown type, defer to engine default.
+        return props.renderDefault(props)
+      }
+      // PTE gives us the full Path including the input's base path appended.
+      // Studio's BlockObject expects:
+      //   `path`         = absolute path from the document root, AND
+      //   `relativePath` = path relative to the PortableText input array (the
+      //                     bit PTE owns).
+      // The "relative" portion is what comes after `ctx.basePath`.
+      const baseLen = ctx.basePath.length
+      const relativePath: Path =
+        props.path.length > baseLen
+          ? (props.path.slice(baseLen) as Path)
+          : (props.path as Path)
+      const absolutePath: Path =
+        props.path.length > baseLen ? (props.path as Path) : ctx.basePath.concat(props.path)
+
+      return (
+        <BlockObject
+          floatingBoundary={boundaryElement}
+          focused={props.focused}
+          isFullscreen={ctx.isFullscreen}
+          onItemClose={ctx.onItemClose}
+          onItemOpen={ctx.onItemOpen}
+          onItemRemove={ctx.onItemRemove}
+          onPathFocus={ctx.onPathFocus}
+          path={absolutePath}
+          readOnly={props.readOnly || ctx.readOnly}
+          referenceBoundary={ctx.scrollElement}
+          relativePath={relativePath}
+          renderAnnotation={ctx.renderAnnotation}
+          renderBlock={ctx.renderBlock}
+          renderBlockActions={ctx.renderBlockActions}
+          renderCustomMarkers={ctx.renderCustomMarkers}
+          renderField={ctx.renderField}
+          renderInlineBlock={ctx.renderInlineBlock}
+          renderInput={ctx.renderInput}
+          renderItem={ctx.renderItem}
+          renderPreview={ctx.renderPreview}
+          schemaType={sanitySchemaType}
+          selected={props.selected}
+          setElementRef={() => {
+            /* no-op: container-nested block objects don't participate in
+             * Studio's element-ref tracking (used for scroll-into-view of
+             * top-level blocks). Best-effort POC. */
+          }}
+          value={props.node}
+        >
+          {props.children}
+        </BlockObject>
+      )
+    },
+    [boundaryElement, ctx, schemaTypes.blockObjects],
+  )
+}

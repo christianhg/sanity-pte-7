@@ -12,6 +12,7 @@ import {
 import {type Path, type PortableTextBlock, type PortableTextTextBlock} from '@sanity/types'
 import {Box, Portal, PortalProvider, useBoundaryElement, usePortal} from '@sanity/ui'
 import {type ReactNode, useCallback, useMemo, useState} from 'react'
+import {PortableTextInputCompositorContext} from 'sanity/_singletons'
 
 import {ChangeIndicator} from '../../../changeIndicators'
 import {EMPTY_ARRAY} from '../../../util'
@@ -532,12 +533,58 @@ export function Compositor(props: Omit<InputProps, 'schemaType' | 'arrayFunction
   })
 
   // The editor should have a focus ring when the field itself is focused,
+  // Context value for userland `defineBlockObject({render: useStudioBlockObjectRender()})`.
+  // Bundles all the props that BlockObject needs but that flow into Compositor via
+  // closure, so userland render functions can read them.
+  const compositorContextValue = useMemo(
+    () => ({
+      basePath: path,
+      readOnly: Boolean(readOnly),
+      isFullscreen,
+      onItemClose,
+      onItemOpen,
+      onItemRemove,
+      onPathFocus,
+      scrollElement,
+      renderAnnotation,
+      renderBlock,
+      renderBlockActions,
+      renderCustomMarkers,
+      renderField,
+      renderInlineBlock,
+      renderInput,
+      renderItem,
+      renderPreview,
+    }),
+    [
+      path,
+      readOnly,
+      isFullscreen,
+      onItemClose,
+      onItemOpen,
+      onItemRemove,
+      onPathFocus,
+      scrollElement,
+      renderAnnotation,
+      renderBlock,
+      renderBlockActions,
+      renderCustomMarkers,
+      renderField,
+      renderInlineBlock,
+      renderInput,
+      renderItem,
+      renderPreview,
+    ],
+  )
+
+  // Don't render the editor until the editor is in focus, has focus within or
   // or focus is pointing directly to a node inside the editor
   // (as opposed to focus on fields inside object nodes like annotations, inline blocks etc.)
   const editorFocused = focused || hasFocusWithin
 
   return (
-    <SelectedAnnotationsProvider>
+    <PortableTextInputCompositorContext.Provider value={compositorContextValue}>
+      <SelectedAnnotationsProvider>
       <PortalProvider __unstable_elements={portalElements} element={portal.element}>
         <ActivateOnFocus onActivate={onActivate} isOverlayActive={!isActive}>
           <ChangeIndicator
@@ -570,5 +617,6 @@ export function Compositor(props: Omit<InputProps, 'schemaType' | 'arrayFunction
         </ActivateOnFocus>
       </PortalProvider>
     </SelectedAnnotationsProvider>
+    </PortableTextInputCompositorContext.Provider>
   )
 }
