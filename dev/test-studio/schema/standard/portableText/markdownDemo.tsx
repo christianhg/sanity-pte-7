@@ -2,26 +2,21 @@ import {defineArrayMember, defineField, defineType} from 'sanity'
 import {StructuredListsPlugin} from './structuredListsPlugin'
 
 /**
- * Markdown-compliant demo doc for v7 structured-lists spike.
+ * Markdown-compliant demo doc for the v7 structured-lists spike.
  *
  * Renders `_type: 'list'` as <ul>/<ol> and `_type: 'list-item'` as <li>,
- * with images and nested lists supported inside list-items as block-objects.
+ * with images supported inside list-items as block-objects.
  *
  * The `<StructuredListsPlugin />` registers the two containers via
  * NodePlugin so PTE's render pipeline knows their shape.
  *
- * Spike goal: prove rendering + typing + image editing via Studio's
- * dialog works for this structure.
- *
- * The schema is recursive (`list -> items -> list-item -> content -> list`).
- * Sanity supports this natively via lazy type-reference resolution at
- * compile time (see `@sanity/schema`'s `compileRegistry` + `lazyGetter`),
- * which produces a cyclic compiled graph at runtime. Walkers over the
- * compiled schema need cycle detection (`seen` set / `WeakSet`) to
- * terminate - Sanity's own `extractSchema` does this, but
- * `sanity-plugin-internationalized-array@4.0.4`'s
- * `hasInternationalizedArrayInFields` does NOT and stack-overflows.
- * The dedicated `pte-v7` workspace below opts out of that plugin.
+ * NOTE: We do NOT include `list` inside `list-item.content` (nested
+ * lists). Sanity supports recursive schemas natively, but
+ * `sanity-plugin-internationalized-array@4.0.4`'s schema walker has no
+ * cycle detection and stack-overflows on any recursive schema. The
+ * plugin is loaded globally by test-studio. Nested lists are a real
+ * follow-up that would need either upstream fixing the plugin or
+ * removing it from test-studio.
  */
 
 export const listItem = defineType({
@@ -39,7 +34,6 @@ export const listItem = defineType({
           styles: [{title: 'Normal', value: 'normal'}],
           lists: [],
         }),
-        defineArrayMember({type: 'list'}),
         defineArrayMember({type: 'image'}),
       ],
     }),
