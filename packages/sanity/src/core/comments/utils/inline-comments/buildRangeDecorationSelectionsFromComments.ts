@@ -51,6 +51,49 @@ const COMMENT_INDICATORS_REGEX = new RegExp(`[${COMMENT_INDICATORS.join('')}]`, 
 
 const EMPTY_ARRAY: [] = []
 
+type KeyedPathSegment = {_key: string}
+type AncestorPath = Array<KeyedPathSegment | string>
+
+/**
+ * Recursively walk a value array and any nested arrays inside its items
+ * (e.g. container fields like `list.items`, `listItem.content`) to find a
+ * text block by `_key`. Returns the block plus the full keyed path from
+ * the root, suitable for use as a `RangeDecoration` selection path.
+ *
+ * Needed because container API v2 allows text blocks to live inside
+ * containers, not only at the root. The previous root-level `find` would
+ * fail to locate nested blocks and cause comments to appear unlinked.
+ */
+function findTextBlockByKey(
+  value: PortableTextBlock[],
+  blockKey: string,
+): {block: PortableTextTextBlock; ancestorPath: AncestorPath} | undefined {
+  function visit(
+    items: unknown[],
+    pathPrefix: AncestorPath,
+  ): {block: PortableTextTextBlock; ancestorPath: AncestorPath} | undefined {
+    for (const item of items) {
+      if (!item || typeof item !== 'object') continue
+      const node = item as {_key?: string; [field: string]: unknown}
+      const key = node._key
+      if (typeof key !== 'string') continue
+      const here: AncestorPath = [...pathPrefix, {_key: key}]
+      if (key === blockKey && isPortableTextTextBlock(item)) {
+        return {block: item as PortableTextTextBlock, ancestorPath: here}
+      }
+      for (const fieldName of Object.keys(node)) {
+        if (fieldName === '_key' || fieldName === '_type') continue
+        const fieldValue = node[fieldName]
+        if (!Array.isArray(fieldValue)) continue
+        const found = visit(fieldValue, [...here, fieldName])
+        if (found) return found
+      }
+    }
+    return undefined
+  }
+  return visit(value, [])
+}
+
 /**
  * @internal
  */
@@ -84,10 +127,11 @@ export function buildRangeDecorationSelectionsFromComments(
 
   textSelections.forEach((comment) => {
     comment.target.path?.selection?.value.forEach((selectionMember) => {
-      const matchedBlock = value.find((block) => block._key === selectionMember._key)
-      if (!matchedBlock || !isPortableTextTextBlock(matchedBlock)) {
+      const found = findTextBlockByKey(value, selectionMember._key)
+      if (!found) {
         return
       }
+      const {block: matchedBlock, ancestorPath} = found
       const selectionText = selectionMember.text.replaceAll(COMMENT_INDICATORS_REGEX, '')
       const textWithChildSeparators = toPlainTextWithChildSeparators(matchedBlock)
       const {patches} = diffText(selectionText, selectionMember.text)
@@ -149,7 +193,7 @@ export function buildRangeDecorationSelectionsFromComments(
           selection: {
             anchor: {
               path: [
-                {_key: matchedBlock._key},
+                ...ancestorPath,
                 'children',
                 {_key: matchedBlock.children[childIndexAnchor]._key},
               ],
@@ -157,7 +201,7 @@ export function buildRangeDecorationSelectionsFromComments(
             },
             focus: {
               path: [
-                {_key: matchedBlock._key},
+                ...ancestorPath,
                 'children',
                 {_key: matchedBlock.children[childIndexFocus]._key},
               ],
