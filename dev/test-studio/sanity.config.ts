@@ -68,7 +68,7 @@ const envConfig = {
 const sharedSettings = ({
   projectId,
   includeInternationalizedArray = true,
-  excludeSchemaTypes,
+  includeMarkdownDemo = false,
 }: {
   projectId: string
   /**
@@ -79,20 +79,18 @@ const sharedSettings = ({
    */
   includeInternationalizedArray?: boolean
   /**
-   * Skip these schema type names entirely. Used by workspaces that opt out
-   * of `internationalizedArray` to also drop schemas that reference
-   * `internationalizedArrayString` (which would no longer resolve).
+   * The PTE v7 spike's `markdownDemo` doc type uses a recursive schema
+   * (`list` inside `list-item.content`) that crashes the
+   * internationalized-array walker if opened in a workspace that loads
+   * that plugin. Only register the spike schemas in the dedicated
+   * pte-v7 workspace.
    */
-  excludeSchemaTypes?: readonly string[]
+  includeMarkdownDemo?: boolean
 }) => {
   return definePlugin({
     name: 'sharedSettings',
     schema: {
-      types: excludeSchemaTypes && excludeSchemaTypes.length > 0
-        ? createSchemaTypes(projectId).filter(
-            (type) => !excludeSchemaTypes.includes(type.name),
-          )
-        : createSchemaTypes(projectId),
+      types: createSchemaTypes(projectId, {includeMarkdownDemo}),
       templates: resolveInitialValueTemplates,
     },
     form: {
@@ -336,7 +334,7 @@ export default defineConfig([
       sharedSettings({
         projectId: 'ppsg7ml5',
         includeInternationalizedArray: false,
-        excludeSchemaTypes: ['objectsDebug', 'internationalizedArrayTest'],
+        includeMarkdownDemo: true,
       }),
     ],
     basePath: '/pte-v7',

@@ -190,7 +190,11 @@ const codeInputType = {
   ],
 }
 
-export function createSchemaTypes(projectId: string) {
+export function createSchemaTypes(
+  projectId: string,
+  options: {includeMarkdownDemo?: boolean} = {},
+) {
+  const {includeMarkdownDemo = false} = options
   return [
     // Test documents with standard inputs
     arrays,
@@ -214,7 +218,7 @@ export function createSchemaTypes(projectId: string) {
     richTextObject,
     ...Object.values(scrollBugTypes),
     customPlugins,
-    ...markdownDemoSchemaTypes,
+    ...(includeMarkdownDemo ? markdownDemoSchemaTypes : []),
     simpleBlock,
     manyEditors,
     simpleBlockNote,
