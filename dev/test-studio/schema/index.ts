@@ -139,6 +139,7 @@ import blocks from './standard/portableText/blocks'
 import {ptCustomBlockEditors} from './standard/portableText/customBlockEditors'
 import {ptCustomMarkersTestType} from './standard/portableText/customMarkers'
 import {customPlugins} from './standard/portableText/customPlugins'
+import {markdownDemoSchemaTypes} from './standard/portableText/markdownDemo'
 import {ptCustomWithDefaultsType} from './standard/portableText/customWithDefaults'
 import manyEditors from './standard/portableText/manyEditors'
 import richTextObject from './standard/portableText/richTextObject'
@@ -213,6 +214,7 @@ export function createSchemaTypes(projectId: string) {
     richTextObject,
     ...Object.values(scrollBugTypes),
     customPlugins,
+    ...markdownDemoSchemaTypes,
     simpleBlock,
     manyEditors,
     simpleBlockNote,
