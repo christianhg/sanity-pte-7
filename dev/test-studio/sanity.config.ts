@@ -68,6 +68,7 @@ const envConfig = {
 const sharedSettings = ({
   projectId,
   includeInternationalizedArray = true,
+  excludeSchemaTypes,
 }: {
   projectId: string
   /**
@@ -77,11 +78,21 @@ const sharedSettings = ({
    * Opt the v7 workspace out via this flag until the plugin is fixed upstream.
    */
   includeInternationalizedArray?: boolean
+  /**
+   * Skip these schema type names entirely. Used by workspaces that opt out
+   * of `internationalizedArray` to also drop schemas that reference
+   * `internationalizedArrayString` (which would no longer resolve).
+   */
+  excludeSchemaTypes?: readonly string[]
 }) => {
   return definePlugin({
     name: 'sharedSettings',
     schema: {
-      types: createSchemaTypes(projectId),
+      types: excludeSchemaTypes && excludeSchemaTypes.length > 0
+        ? createSchemaTypes(projectId).filter(
+            (type) => !excludeSchemaTypes.includes(type.name),
+          )
+        : createSchemaTypes(projectId),
       templates: resolveInitialValueTemplates,
     },
     form: {
@@ -321,7 +332,13 @@ export default defineConfig([
     projectId: 'ppsg7ml5',
     dataset: 'test',
     ...envConfig.production,
-    plugins: [sharedSettings({projectId: 'ppsg7ml5', includeInternationalizedArray: false})],
+    plugins: [
+      sharedSettings({
+        projectId: 'ppsg7ml5',
+        includeInternationalizedArray: false,
+        excludeSchemaTypes: ['objectsDebug', 'internationalizedArrayTest'],
+      }),
+    ],
     basePath: '/pte-v7',
     icon: SanityMonogram,
     mediaLibrary: {
