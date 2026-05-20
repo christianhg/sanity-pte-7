@@ -12,6 +12,12 @@ import {StructuredListsPlugin} from './structuredListsPlugin'
  *
  * Spike goal: prove rendering + typing + image editing via Studio's
  * dialog works for this structure.
+ *
+ * NOTE: `list` does NOT contain itself inside `list-item.content` -
+ * the recursive shape (list -> items -> list-item -> content -> list)
+ * crashes `sanity-plugin-internationalized-array`'s schema walker
+ * which lacks cycle detection. Nested lists are a separate concern
+ * to revisit after the basic rendering path is proven.
  */
 
 export const listItem = defineType({
@@ -29,7 +35,6 @@ export const listItem = defineType({
           styles: [{title: 'Normal', value: 'normal'}],
           lists: [],
         }),
-        defineArrayMember({type: 'list'}),
         defineArrayMember({type: 'image'}),
       ],
     }),
