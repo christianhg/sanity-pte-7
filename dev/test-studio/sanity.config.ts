@@ -65,35 +65,11 @@ const envConfig = {
   staging: isStaging ? {} : {apiHost: 'https://api.sanity.work'},
 }
 
-const sharedSettings = ({
-  projectId,
-  includeInternationalizedArray = true,
-  includeMarkdownDemo = false,
-}: {
-  projectId: string
-  /**
-   * The PTE v7 spike workspace uses recursive schemas (`list` inside
-   * `list-item.content`) which crash `sanity-plugin-internationalized-array@4.0.4`'s
-   * `hasInternationalizedArrayInFields` walker (no cycle detection).
-   * Opt the v7 workspace out via this flag until the plugin is fixed upstream.
-   */
-  includeInternationalizedArray?: boolean
-  /**
-   * The PTE v7 spike's `markdownDemo` doc type uses a recursive schema
-   * (`list` inside `list-item.content`) that crashes the
-   * internationalized-array walker if opened in a workspace that loads
-   * that plugin. Only register the spike schemas in the dedicated
-   * pte-v7 workspace.
-   */
-  includeMarkdownDemo?: boolean
-}) => {
+const sharedSettings = ({projectId}: {projectId: string}) => {
   return definePlugin({
     name: 'sharedSettings',
     schema: {
-      types: createSchemaTypes(projectId, {
-        includeMarkdownDemo,
-        includeInternationalizedArrayTypes: includeInternationalizedArray,
-      }),
+      types: createSchemaTypes(projectId),
       templates: resolveInitialValueTemplates,
     },
     form: {
@@ -246,18 +222,14 @@ const sharedSettings = ({
       markdownSchema(),
       wave(),
       autoCloseBrackets(),
-      ...(includeInternationalizedArray
-        ? [
-            internationalizedArray({
-              languages: [
-                {id: 'en', title: 'English'},
-                {id: 'fr', title: 'French'},
-              ],
-              defaultLanguages: ['en'],
-              fieldTypes: ['string'],
-            }),
-          ]
-        : []),
+      internationalizedArray({
+        languages: [
+          {id: 'en', title: 'English'},
+          {id: 'fr', title: 'French'},
+        ],
+        defaultLanguages: ['en'],
+        fieldTypes: ['string'],
+      }),
       documentInternationalization({
         supportedLanguages: [
           {id: 'en', title: 'English'},
@@ -326,26 +298,6 @@ const defaultWorkspace = defineConfig({
 })
 
 export default defineConfig([
-  {
-    name: 'pte-v7',
-    title: 'PTE v7 Spike',
-    subtitle: 'Structured lists with images, nested lists, and Container API v2',
-    projectId: 'ppsg7ml5',
-    dataset: 'test',
-    ...envConfig.production,
-    plugins: [
-      sharedSettings({
-        projectId: 'ppsg7ml5',
-        includeInternationalizedArray: false,
-        includeMarkdownDemo: true,
-      }),
-    ],
-    basePath: '/pte-v7',
-    icon: SanityMonogram,
-    mediaLibrary: {
-      enabled: true,
-    },
-  },
   {
     ...defaultWorkspace,
     name: 'default-hidden',
