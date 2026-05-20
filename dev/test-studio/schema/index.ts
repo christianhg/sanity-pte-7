@@ -80,7 +80,6 @@ import {longValidationTestType} from './debug/longValidation'
 import manyFieldsTest from './debug/manyFieldsTest'
 import {manyViewsType} from './debug/manyViews'
 import notitle from './debug/notitle'
-import {objectsDebug} from './debug/objectsDebug'
 import {patchOnMountDebug} from './debug/patchOnMount'
 import poppers from './debug/poppers'
 import presence, {objectWithNestedArray} from './debug/presence'
@@ -109,7 +108,6 @@ import {virtualizationDebug} from './debug/virtualizationDebug'
 import {virtualizationInObject} from './debug/virtualizationInObject'
 import {v3docs} from './docs/v3'
 import {documentInternationalizationTest} from './externalPlugins/documentInternationalization'
-import internationalizedArray from './externalPlugins/internationalizedArray'
 import markdown from './externalPlugins/markdown'
 import mux from './externalPlugins/mux'
 import house from './house'
@@ -190,12 +188,8 @@ const codeInputType = {
   ],
 }
 
-export function createSchemaTypes(
-  projectId: string,
-  options: {includeMarkdownDemo?: boolean; includeInternationalizedArrayTypes?: boolean} = {},
-) {
-  const {includeMarkdownDemo = false, includeInternationalizedArrayTypes = true} = options
-  const types = [
+export function createSchemaTypes(projectId: string) {
+  return [
     // Test documents with standard inputs
     arrays,
     topLevelArrayType,
@@ -218,7 +212,7 @@ export function createSchemaTypes(
     richTextObject,
     ...Object.values(scrollBugTypes),
     customPlugins,
-    ...(includeMarkdownDemo ? markdownDemoSchemaTypes : []),
+    ...markdownDemoSchemaTypes,
     simpleBlock,
     manyEditors,
     simpleBlockNote,
@@ -292,7 +286,6 @@ export function createSchemaTypes(
     namedDeprecatedObject,
     namedDeprecatedArray,
     notitle,
-    objectsDebug,
     longValidationTestType,
     poppers,
     presence,
@@ -348,7 +341,6 @@ export function createSchemaTypes(
     // Test documents with 3rd party plugin inputs
     markdown,
     mux,
-    internationalizedArray,
     documentInternationalizationTest,
     // Other documents
     author,
@@ -375,13 +367,4 @@ export function createSchemaTypes(
     // Test documents for docs
     ...v3docs.types,
   ]
-
-  if (!includeInternationalizedArrayTypes) {
-    // These schemas reference `internationalizedArrayString` which is registered
-    // by the `internationalizedArray` plugin. Drop them when the plugin is not
-    // loaded in the workspace.
-    const excluded = new Set(['objectsDebug', 'internationalizedArrayTest'])
-    return types.filter((type) => !excluded.has(type.name))
-  }
-  return types
 }
