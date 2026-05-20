@@ -29,6 +29,7 @@ export const STANDARD_PORTABLE_TEXT_INPUT_TYPES = [
   'documentWithHoistedPt',
   'pt_customBlockEditors',
   'initialFullScreenPTE',
+  'markdownDemo',
 ]
 
 export const PLUGIN_INPUT_TYPES = [
