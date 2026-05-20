@@ -51,7 +51,6 @@ import {
 } from './diff/useOptimisticPortableTextDiff'
 import {usePortableTextMemberItemsFromProps} from './hooks/usePortableTextMembers'
 import {InvalidValue as RespondToInvalidContent} from './InvalidValue'
-import {PortableTextEditorPlugins} from './object/Plugins'
 import {
   type PresenceCursorDecorationsHookProps,
   usePresenceCursorDecorations,
@@ -402,7 +401,6 @@ export function PortableTextInput(props: PortableTextInputProps): ReactNode {
                 <PatchesPlugin path={path} />
                 <UpdateReadOnlyPlugin readOnly={readOnly || !ready} />
                 <UpdateValuePlugin value={value} />
-                <PortableTextEditorPlugins schemaType={schemaType} />
                 <Compositor
                   {...props}
                   elementRef={elementRef}

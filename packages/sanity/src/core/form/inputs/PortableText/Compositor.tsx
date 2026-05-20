@@ -33,6 +33,7 @@ import {Annotation} from './object/Annotation'
 import {BlockObject} from './object/BlockObject'
 import {CombinedAnnotationPopover} from './object/CombinedAnnotationPopover'
 import {InlineObject} from './object/InlineObject'
+import {PortableTextEditorPlugins} from './object/Plugins'
 import {AnnotationObjectEditModal} from './object/modals/AnnotationObjectEditModal'
 import {TextBlock} from './text'
 
@@ -54,7 +55,7 @@ interface InputProps extends ArrayOfObjectsInputProps<PortableTextBlock> {
 }
 
 /** @internal */
-export function Compositor(props: Omit<InputProps, 'schemaType' | 'arrayFunctions'>): ReactNode {
+export function Compositor(props: Omit<InputProps, 'arrayFunctions'>): ReactNode {
   const {
     changed,
     elementRef,
@@ -584,6 +585,7 @@ export function Compositor(props: Omit<InputProps, 'schemaType' | 'arrayFunction
 
   return (
     <PortableTextInputCompositorContext.Provider value={compositorContextValue}>
+      <PortableTextEditorPlugins schemaType={props.schemaType} />
       <SelectedAnnotationsProvider>
       <PortalProvider __unstable_elements={portalElements} element={portal.element}>
         <ActivateOnFocus onActivate={onActivate} isOverlayActive={!isActive}>
