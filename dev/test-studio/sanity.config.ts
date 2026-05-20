@@ -65,7 +65,19 @@ const envConfig = {
   staging: isStaging ? {} : {apiHost: 'https://api.sanity.work'},
 }
 
-const sharedSettings = ({projectId}: {projectId: string}) => {
+const sharedSettings = ({
+  projectId,
+  includeInternationalizedArray = true,
+}: {
+  projectId: string
+  /**
+   * The PTE v7 spike workspace uses recursive schemas (`list` inside
+   * `list-item.content`) which crash `sanity-plugin-internationalized-array@4.0.4`'s
+   * `hasInternationalizedArrayInFields` walker (no cycle detection).
+   * Opt the v7 workspace out via this flag until the plugin is fixed upstream.
+   */
+  includeInternationalizedArray?: boolean
+}) => {
   return definePlugin({
     name: 'sharedSettings',
     schema: {
@@ -222,14 +234,18 @@ const sharedSettings = ({projectId}: {projectId: string}) => {
       markdownSchema(),
       wave(),
       autoCloseBrackets(),
-      internationalizedArray({
-        languages: [
-          {id: 'en', title: 'English'},
-          {id: 'fr', title: 'French'},
-        ],
-        defaultLanguages: ['en'],
-        fieldTypes: ['string'],
-      }),
+      ...(includeInternationalizedArray
+        ? [
+            internationalizedArray({
+              languages: [
+                {id: 'en', title: 'English'},
+                {id: 'fr', title: 'French'},
+              ],
+              defaultLanguages: ['en'],
+              fieldTypes: ['string'],
+            }),
+          ]
+        : []),
       documentInternationalization({
         supportedLanguages: [
           {id: 'en', title: 'English'},
@@ -298,6 +314,20 @@ const defaultWorkspace = defineConfig({
 })
 
 export default defineConfig([
+  {
+    name: 'pte-v7',
+    title: 'PTE v7 Spike',
+    subtitle: 'Structured lists with images, nested lists, and Container API v2',
+    projectId: 'ppsg7ml5',
+    dataset: 'test',
+    ...envConfig.production,
+    plugins: [sharedSettings({projectId: 'ppsg7ml5', includeInternationalizedArray: false})],
+    basePath: '/pte-v7',
+    icon: SanityMonogram,
+    mediaLibrary: {
+      enabled: true,
+    },
+  },
   {
     ...defaultWorkspace,
     name: 'default-hidden',
