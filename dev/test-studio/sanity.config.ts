@@ -9,6 +9,7 @@ import {visionTool} from '@sanity/vision'
 import {defineConfig, definePlugin, type WorkspaceOptions} from 'sanity'
 import {unsplashAssetSource, UnsplashIcon} from 'sanity-plugin-asset-source-unsplash'
 import {imageHotspotArrayPlugin} from 'sanity-plugin-hotspot-array'
+import {internationalizedArray} from 'sanity-plugin-internationalized-array'
 import {markdownSchema} from 'sanity-plugin-markdown'
 import {media} from 'sanity-plugin-media'
 import {muxInput} from 'sanity-plugin-mux-input'
@@ -221,6 +222,14 @@ const sharedSettings = ({projectId}: {projectId: string}) => {
       markdownSchema(),
       wave(),
       autoCloseBrackets(),
+      internationalizedArray({
+        languages: [
+          {id: 'en', title: 'English'},
+          {id: 'fr', title: 'French'},
+        ],
+        defaultLanguages: ['en'],
+        fieldTypes: ['string'],
+      }),
       documentInternationalization({
         supportedLanguages: [
           {id: 'en', title: 'English'},
