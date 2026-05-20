@@ -90,7 +90,10 @@ const sharedSettings = ({
   return definePlugin({
     name: 'sharedSettings',
     schema: {
-      types: createSchemaTypes(projectId, {includeMarkdownDemo}),
+      types: createSchemaTypes(projectId, {
+        includeMarkdownDemo,
+        includeInternationalizedArrayTypes: includeInternationalizedArray,
+      }),
       templates: resolveInitialValueTemplates,
     },
     form: {

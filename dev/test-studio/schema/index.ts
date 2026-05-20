@@ -192,10 +192,10 @@ const codeInputType = {
 
 export function createSchemaTypes(
   projectId: string,
-  options: {includeMarkdownDemo?: boolean} = {},
+  options: {includeMarkdownDemo?: boolean; includeInternationalizedArrayTypes?: boolean} = {},
 ) {
-  const {includeMarkdownDemo = false} = options
-  return [
+  const {includeMarkdownDemo = false, includeInternationalizedArrayTypes = true} = options
+  const types = [
     // Test documents with standard inputs
     arrays,
     topLevelArrayType,
@@ -375,4 +375,13 @@ export function createSchemaTypes(
     // Test documents for docs
     ...v3docs.types,
   ]
+
+  if (!includeInternationalizedArrayTypes) {
+    // These schemas reference `internationalizedArrayString` which is registered
+    // by the `internationalizedArray` plugin. Drop them when the plugin is not
+    // loaded in the workspace.
+    const excluded = new Set(['objectsDebug', 'internationalizedArrayTest'])
+    return types.filter((type) => !excluded.has(type.name))
+  }
+  return types
 }
