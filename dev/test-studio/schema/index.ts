@@ -80,6 +80,7 @@ import {longValidationTestType} from './debug/longValidation'
 import manyFieldsTest from './debug/manyFieldsTest'
 import {manyViewsType} from './debug/manyViews'
 import notitle from './debug/notitle'
+import {objectsDebug} from './debug/objectsDebug'
 import {patchOnMountDebug} from './debug/patchOnMount'
 import poppers from './debug/poppers'
 import presence, {objectWithNestedArray} from './debug/presence'
@@ -108,6 +109,7 @@ import {virtualizationDebug} from './debug/virtualizationDebug'
 import {virtualizationInObject} from './debug/virtualizationInObject'
 import {v3docs} from './docs/v3'
 import {documentInternationalizationTest} from './externalPlugins/documentInternationalization'
+import internationalizedArray from './externalPlugins/internationalizedArray'
 import markdown from './externalPlugins/markdown'
 import mux from './externalPlugins/mux'
 import house from './house'
@@ -286,6 +288,7 @@ export function createSchemaTypes(projectId: string) {
     namedDeprecatedObject,
     namedDeprecatedArray,
     notitle,
+    objectsDebug,
     longValidationTestType,
     poppers,
     presence,
@@ -341,6 +344,7 @@ export function createSchemaTypes(projectId: string) {
     // Test documents with 3rd party plugin inputs
     markdown,
     mux,
+    internationalizedArray,
     documentInternationalizationTest,
     // Other documents
     author,
