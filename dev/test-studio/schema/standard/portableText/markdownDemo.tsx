@@ -5,18 +5,11 @@ import {StructuredListsPlugin} from './structuredListsPlugin'
  * Markdown-compliant demo doc for the v7 structured-lists spike.
  *
  * Renders `_type: 'list'` as <ul>/<ol> and `_type: 'list-item'` as <li>,
- * with images supported inside list-items as block-objects.
- *
- * The `<StructuredListsPlugin />` registers the two containers via
- * NodePlugin so PTE's render pipeline knows their shape.
- *
- * NOTE: We do NOT include `list` inside `list-item.content` (nested
- * lists). Sanity supports recursive schemas natively, but
- * `sanity-plugin-internationalized-array@4.0.4`'s schema walker has no
- * cycle detection and stack-overflows on any recursive schema. The
- * plugin is loaded globally by test-studio. Nested lists are a real
- * follow-up that would need either upstream fixing the plugin or
- * removing it from test-studio.
+ * with nested lists and images supported inside list-items as
+ * block-objects. Sanity supports recursive schemas natively via lazy
+ * type-reference resolution; the test-studio config drops
+ * `sanity-plugin-internationalized-array` so its walker (no cycle
+ * detection, crashes on recursive schemas) is out of the way.
  */
 
 export const listItem = defineType({
@@ -34,6 +27,7 @@ export const listItem = defineType({
           styles: [{title: 'Normal', value: 'normal'}],
           lists: [],
         }),
+        defineArrayMember({type: 'list'}),
         defineArrayMember({type: 'image'}),
       ],
     }),
