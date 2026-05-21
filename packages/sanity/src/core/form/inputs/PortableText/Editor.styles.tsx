@@ -1,7 +1,7 @@
 /* eslint-disable camelcase */
 
 import {Card, rem} from '@sanity/ui'
-import {getTheme_v2, rgba} from '@sanity/ui/theme'
+import {getTheme_v2} from '@sanity/ui/theme'
 import {css, styled} from 'styled-components'
 
 import {ScrollContainer} from '../../../components/scroll'
@@ -52,16 +52,6 @@ export const EditableCard = styled(Card)`
   &::selection,
   *::selection {
     background-color: transparent;
-  }
-
-  /* Re-enable selection painting inside container-pipeline text blocks. The
-   * legacy pipeline scopes selection painting to [data-text] inside
-   * TextBlock; container-pipeline text blocks are emitted by the engine as
-   * <div data-pt-block="text"> without that attribute, so without this
-   * rule the parent ::selection: transparent above wins and range
-   * selections are invisible inside containers. */
-  & [data-pt-block='text'] *::selection {
-    background-color: ${({theme}) => rgba(getTheme_v2(theme).color.focusRing, 0.3)};
   }
 `
 
@@ -129,12 +119,7 @@ export const EditableWrapper = styled(Card)<{$isFullscreen: boolean; $isOneLine:
     padding-bottom: ${({$isFullscreen, $isOneLine, theme}) =>
       $isOneLine ? '0' : theme.sanity.space[$isFullscreen ? 9 : 5]}px;
 
-    /* Container-pipeline blocks land here as direct children of the editable
-     * but lack the legacy .pt-block class. Constrain their width via the
-     * data-pt-block engine attribute so containers (e.g. <ul>) are bound to
-     * the same readable max-width as legacy text blocks. */
-    & > .pt-block,
-    & > [data-pt-block] {
+    & > .pt-block {
       margin: 0 auto;
       max-width: ${(props) => getTheme_v2(props.theme).container[1]}px;
     }
