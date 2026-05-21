@@ -15,6 +15,7 @@ import {
   type FormBuilderProps,
   type FormNodePresence,
   getExpandOperations,
+  type OnPathFocusPayload,
   type PatchEvent,
   ScrollContainer,
   setAtPath,
@@ -189,9 +190,16 @@ export function TestForm(props: TestFormProps) {
   }, [formState])
 
   const handleFocus = useCallback(
-    (nextFocusPath: Path) => {
+    (nextFocusPath: Path, payload?: OnPathFocusPayload) => {
       setFocusPath(nextFocusPath)
       onPathFocusFromProps?.(nextFocusPath)
+
+      // Focus changes that originate from an editor selection (Portable Text)
+      // describe a caret position in the text, not a navigation into a form
+      // field. They must not move openPath - explicit onPathOpen calls do.
+      if (payload?.selection) {
+        return
+      }
 
       // When focusing on an object field, set openPath to the field's parent.
       // Exception: if focusing directly on an array item (so it has a key),
