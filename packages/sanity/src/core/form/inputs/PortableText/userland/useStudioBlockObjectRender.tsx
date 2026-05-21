@@ -74,6 +74,12 @@ export function useStudioBlockObjectRender(): (props: BlockObjectRenderProps) =>
 
       return (
         <div {...(props.attributes as Record<string, unknown>)}>
+          {/* Engine spacer (zero-width FEFF inside an absolutely-positioned
+            * hidden node). Must live inside the editable DOM so slate can
+            * map caret positions through the void object. The asymmetric
+            * default-block-object renderer in PTE v7 puts this BEFORE the
+            * visual; mirror that shape here. */}
+          {props.children}
           <BlockObject
             floatingBoundary={boundaryElement}
             focused={props.focused}
@@ -103,9 +109,7 @@ export function useStudioBlockObjectRender(): (props: BlockObjectRenderProps) =>
                * top-level blocks). Best-effort POC. */
             }}
             value={props.node}
-          >
-            {props.children}
-          </BlockObject>
+          />
         </div>
       )
     },
