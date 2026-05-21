@@ -42,7 +42,7 @@ export function StructuredListsPlugin() {
       return (
         <Tag
           {...attributes}
-          style={{paddingLeft: '1.5em', margin: '0.5em 0'}}
+          style={{paddingLeft: '1.5em'}}
           data-style={style}
         >
           {children}
