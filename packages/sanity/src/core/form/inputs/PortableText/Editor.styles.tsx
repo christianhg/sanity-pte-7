@@ -129,7 +129,12 @@ export const EditableWrapper = styled(Card)<{$isFullscreen: boolean; $isOneLine:
     padding-bottom: ${({$isFullscreen, $isOneLine, theme}) =>
       $isOneLine ? '0' : theme.sanity.space[$isFullscreen ? 9 : 5]}px;
 
-    & > .pt-block {
+    /* Container-pipeline blocks land here as direct children of the editable
+     * but lack the legacy .pt-block class. Constrain their width via the
+     * data-pt-block engine attribute so containers (e.g. <ul>) are bound to
+     * the same readable max-width as legacy text blocks. */
+    & > .pt-block,
+    & > [data-pt-block] {
       margin: 0 auto;
       max-width: ${(props) => getTheme_v2(props.theme).container[1]}px;
     }
