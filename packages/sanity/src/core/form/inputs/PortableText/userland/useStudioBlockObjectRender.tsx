@@ -4,7 +4,8 @@ import {useBoundaryElement} from '@sanity/ui'
 import {type ReactElement, useCallback, useContext} from 'react'
 import {PortableTextInputCompositorContext} from 'sanity/_singletons'
 
-import {usePortableTextMemberSchemaTypes} from '../contexts/PortableTextMemberSchemaTypes'
+import {pathToString} from '../../../../field'
+import {usePortableTextMemberItem} from '../hooks/usePortableTextMembers'
 import {BlockObject} from '../object/BlockObject'
 
 /**
@@ -47,72 +48,92 @@ type BlockObjectRenderProps = Parameters<
  * @beta
  */
 export function useStudioBlockObjectRender(): (props: BlockObjectRenderProps) => ReactElement {
+  // Ensure consumer is inside a Sanity PortableText input. The inner
+  // `<StudioBlockObject>` component reads the same context to render, but
+  // failing early here yields a clearer error message at hook-call time.
   const ctx = useContext(PortableTextInputCompositorContext)
   if (!ctx) {
     throw new Error(
       'useStudioBlockObjectRender must be used inside a Sanity PortableText input',
     )
   }
-  const schemaTypes = usePortableTextMemberSchemaTypes()
-  const boundaryElement = useBoundaryElement().element
 
   return useCallback(
-    (props: BlockObjectRenderProps): ReactElement => {
-      const sanitySchemaType = schemaTypes.blockObjects.find(
-        (type) => type.name === props.node._type,
-      )
-      if (!sanitySchemaType) {
-        // Unknown type, defer to engine default.
-        return props.renderDefault(props)
-      }
-      // PTE gives us the path INSIDE the input (relative to the input array).
-      // Studio's BlockObject expects:
-      //   `path`         = absolute path from the document root, AND
-      //   `relativePath` = path relative to the PortableText input array.
-      const relativePath: Path = props.path as Path
-      const absolutePath: Path = ctx.basePath.concat(relativePath)
+    (props: BlockObjectRenderProps): ReactElement => <StudioBlockObject {...props} />,
+    [],
+  )
+}
 
-      return (
-        <div {...(props.attributes as Record<string, unknown>)}>
-          {/* Engine spacer (zero-width FEFF inside an absolutely-positioned
-            * hidden node). Must live inside the editable DOM so slate can
-            * map caret positions through the void object. The asymmetric
-            * default-block-object renderer in PTE v7 puts this BEFORE the
-            * visual; mirror that shape here. */}
-          {props.children}
-          <BlockObject
-            floatingBoundary={boundaryElement}
-            focused={props.focused}
-            isFullscreen={ctx.isFullscreen}
-            onItemClose={ctx.onItemClose}
-            onItemOpen={ctx.onItemOpen}
-            onItemRemove={ctx.onItemRemove}
-            onPathFocus={ctx.onPathFocus}
-            path={absolutePath}
-            readOnly={props.readOnly || ctx.readOnly}
-            referenceBoundary={ctx.scrollElement}
-            relativePath={relativePath}
-            renderAnnotation={ctx.renderAnnotation}
-            renderBlock={ctx.renderBlock}
-            renderBlockActions={ctx.renderBlockActions}
-            renderCustomMarkers={ctx.renderCustomMarkers}
-            renderField={ctx.renderField}
-            renderInlineBlock={ctx.renderInlineBlock}
-            renderInput={ctx.renderInput}
-            renderItem={ctx.renderItem}
-            renderPreview={ctx.renderPreview}
-            schemaType={sanitySchemaType}
-            selected={props.selected}
-            setElementRef={() => {
-              /* no-op: container-nested block objects don't participate in
-               * Studio's element-ref tracking (used for scroll-into-view of
-               * top-level blocks). Best-effort POC. */
-            }}
-            value={props.node}
-          />
-        </div>
-      )
-    },
-    [boundaryElement, ctx, schemaTypes.blockObjects],
+/**
+ * The actual render body. PTE invokes the callback returned by
+ * `useStudioBlockObjectRender` as a plain function, so hook-based lookups
+ * (member resolution, boundary element, etc.) need to live inside a React
+ * component child.
+ */
+function StudioBlockObject(props: BlockObjectRenderProps): ReactElement {
+  const ctx = useContext(PortableTextInputCompositorContext)
+  const boundaryElement = useBoundaryElement().element
+
+  // PTE gives us the path INSIDE the input (relative to the input array).
+  // Studio's BlockObject expects:
+  //   `path`         = absolute path from the document root, AND
+  //   `relativePath` = path relative to the PortableText input array.
+  const relativePath: Path = props.path as Path
+  const absolutePath: Path = ctx ? ctx.basePath.concat(relativePath) : relativePath
+
+  // The form-store walker resolves the Sanity ObjectSchemaType at the
+  // current path by descending the Sanity schema tree segment-by-segment.
+  // Read it directly from the walker-resolved member instead of doing a
+  // root-level name lookup on `schemaTypes.blockObjects` (which only covers
+  // types declared at the top level of the PT array's `of`, and would miss
+  // any type that only appears inside a container).
+  const memberItem = usePortableTextMemberItem(pathToString(absolutePath))
+  const sanitySchemaType = memberItem?.node.schemaType
+
+  if (!ctx || !sanitySchemaType) {
+    // No Compositor context (used outside a Sanity PT input) or no resolved
+    // schema type at this path: defer to PTE's engine default placeholder.
+    return props.renderDefault(props)
+  }
+
+  return (
+    <div {...(props.attributes as Record<string, unknown>)}>
+      {/* Engine spacer (zero-width FEFF inside an absolutely-positioned
+        * hidden node). Must live inside the editable DOM so slate can
+        * map caret positions through the void object. PTE v7's
+        * `renderDefaultBlockObject` places this BEFORE the visual;
+        * mirror that shape here. */}
+      {props.children}
+      <BlockObject
+        floatingBoundary={boundaryElement}
+        focused={props.focused}
+        isFullscreen={ctx.isFullscreen}
+        onItemClose={ctx.onItemClose}
+        onItemOpen={ctx.onItemOpen}
+        onItemRemove={ctx.onItemRemove}
+        onPathFocus={ctx.onPathFocus}
+        path={absolutePath}
+        readOnly={props.readOnly || ctx.readOnly}
+        referenceBoundary={ctx.scrollElement}
+        relativePath={relativePath}
+        renderAnnotation={ctx.renderAnnotation}
+        renderBlock={ctx.renderBlock}
+        renderBlockActions={ctx.renderBlockActions}
+        renderCustomMarkers={ctx.renderCustomMarkers}
+        renderField={ctx.renderField}
+        renderInlineBlock={ctx.renderInlineBlock}
+        renderInput={ctx.renderInput}
+        renderItem={ctx.renderItem}
+        renderPreview={ctx.renderPreview}
+        schemaType={sanitySchemaType}
+        selected={props.selected}
+        setElementRef={() => {
+          /* no-op: container-nested block objects don't participate in
+           * Studio's element-ref tracking (used for scroll-into-view of
+           * top-level blocks). Best-effort POC. */
+        }}
+        value={props.node}
+      />
+    </div>
   )
 }
