@@ -26,7 +26,7 @@ export function StructuredListsPlugin() {
     type: 'list-item',
     arrayField: 'content',
     render: ({attributes, children}) => (
-      <li {...attributes} style={{margin: '0.25em 0'}}>
+      <li {...attributes} className="pt-list-item">
         {children}
       </li>
     ),
@@ -42,8 +42,9 @@ export function StructuredListsPlugin() {
       return (
         <Tag
           {...attributes}
-          style={{paddingLeft: '1.5em'}}
+          className="pt-block pt-list"
           data-style={style}
+          style={{paddingInlineStart: '1.5em'}}
         >
           {children}
         </Tag>
