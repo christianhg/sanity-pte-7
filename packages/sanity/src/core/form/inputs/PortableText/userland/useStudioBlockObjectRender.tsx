@@ -5,6 +5,7 @@ import {type ReactElement, useCallback, useContext} from 'react'
 import {PortableTextInputCompositorContext} from 'sanity/_singletons'
 
 import {pathToString} from '../../../../field'
+import {usePortableTextMemberSchemaTypes} from '../contexts/PortableTextMemberSchemaTypes'
 import {usePortableTextMemberItem} from '../hooks/usePortableTextMembers'
 import {BlockObject} from '../object/BlockObject'
 
@@ -73,6 +74,7 @@ export function useStudioBlockObjectRender(): (props: BlockObjectRenderProps) =>
 function StudioBlockObject(props: BlockObjectRenderProps): ReactElement {
   const ctx = useContext(PortableTextInputCompositorContext)
   const boundaryElement = useBoundaryElement().element
+  const schemaTypes = usePortableTextMemberSchemaTypes()
 
   // PTE gives us the path INSIDE the input (relative to the input array).
   // Studio's BlockObject expects:
@@ -83,12 +85,27 @@ function StudioBlockObject(props: BlockObjectRenderProps): ReactElement {
 
   // The form-store walker resolves the Sanity ObjectSchemaType at the
   // current path by descending the Sanity schema tree segment-by-segment.
-  // Read it directly from the walker-resolved member instead of doing a
-  // root-level name lookup on `schemaTypes.blockObjects` (which only covers
-  // types declared at the top level of the PT array's `of`, and would miss
-  // any type that only appears inside a container).
+  // Read it directly from the walker-resolved member: that's the single
+  // source of truth at arbitrary nesting depth, including container-only
+  // types not present at the PT array's top level.
   const memberItem = usePortableTextMemberItem(pathToString(absolutePath))
-  const sanitySchemaType = memberItem?.node.schemaType
+  const memberSchemaType = memberItem?.node.schemaType
+
+  // Fallback used during the one-tick gap between PTE inserting the node
+  // and the form-store walker re-enumerating members. The form-store
+  // catches up asynchronously, so on insert the member isn't yet
+  // available even though PTE has already asked us to render. Without
+  // this fallback the render path falls through to PTE's engine default
+  // (`[type: key]`), producing a visible flash before the real preview
+  // appears. Look up by `_type` against the top-level array's
+  // `blockObjects` (built by `@portabletext/sanity-bridge`): synchronous,
+  // resolves the common case where the type also exists at root. Types
+  // declared exclusively inside containers fall through to the engine
+  // default for that single frame.
+  const topLevelSchemaType = schemaTypes.blockObjects.find(
+    (type) => type.name === props.node._type,
+  )
+  const sanitySchemaType = memberSchemaType ?? topLevelSchemaType
 
   if (!ctx || !sanitySchemaType) {
     // No Compositor context (used outside a Sanity PT input) or no resolved
